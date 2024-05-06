@@ -1,0 +1,6 @@
+﻿  main.cpp
+C:\Programming\Hopefully last graphics\13_Viewing with OBJ loading\main.cpp(10,10): warning C4067: unexpected tokens following preprocessor directive - expected a newline
+C:\Programming\Hopefully last graphics\13_Viewing with OBJ loading\main.cpp(177,21): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Programming\Hopefully last graphics\13_Viewing with OBJ loading\main.cpp(377,11): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
+C:\Programming\Hopefully last graphics\13_Viewing with OBJ loading\main.cpp(378,11): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
+  Freeglutexample.vcxproj -> C:\Programming\Hopefully last graphics\13_Viewing with OBJ loading\x64\Debug\Freeglutexample.exe

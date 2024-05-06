@@ -1,0 +1,2 @@
+C:\Users\karen\Downloads\testingTextures\13_Viewing with OBJ loading\x64\Debug\Freeglutexample.exe
+C:\Programming\Hopefully last graphics\13_Viewing with OBJ loading\x64\Debug\Freeglutexample.exe
