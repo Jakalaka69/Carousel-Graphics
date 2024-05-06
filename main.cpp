@@ -31,7 +31,7 @@ float amount = 0;
 float temp = 0.002f;
 	
 
-CThreeDModel model,model2,woodenFloor; //A threeDModel object is needed for each model loaded
+CThreeDModel model,model2,woodenFloor,carouselFloor; //A threeDModel object is needed for each model loaded
 COBJLoader objLoader;	//this object is used to load the 3d models.
 ///END MODEL LOADING
 
@@ -123,24 +123,11 @@ void display()
 	viewingMatrix = glm::lookAt(camPos, camPos + camFront, camUp);
 
 	
-
-	
-
-
-	
-
-	
-	
 	if (firstLoop == true) {
 		viewingMatrix = glm::translate(viewingMatrix, glm::vec3(0, -30, 0));
 		firstLoop = false;
 	}
 	
-	
-	
-	
-	
-
 	glUniform4fv(glGetUniformLocation(myShader->GetProgramObjID(), "LightPos"), 1, LightPos);
 	glUniform4fv(glGetUniformLocation(myShader->GetProgramObjID(), "light_ambient"), 1, Light_Ambient_And_Diffuse);
 	glUniform4fv(glGetUniformLocation(myShader->GetProgramObjID(), "light_diffuse"), 1, Light_Ambient_And_Diffuse);
@@ -153,23 +140,23 @@ void display()
 
 
 	glUniformMatrix4fv(glGetUniformLocation(myShader->GetProgramObjID(), "ViewMatrix"), 1, GL_FALSE, &viewingMatrix[0][0]);
-	pos.x = 4 * sin(horseAngle);
-	pos.y = 2 + 1 * sin(bounceAngle);
-	pos.z = 4 * cos(horseAngle);
+	pos.x = 2.7 * sin(horseAngle) ;
+	pos.y = 2 + 1 * sin(bounceAngle) -2;
+	pos.z = 2.7 * cos(horseAngle);
 	
-	pos2.x = 4 * sin(horseAngle - 90);
-	pos2.y = 2 + 1 * sin(bounceAngle -90);
-	pos2.z = 4 * cos(horseAngle -90);
-	horseAngle += 0.0003f;
+	pos2.x = 2.7 * sin(horseAngle - 180)-0.5;
+	pos2.y = 2 + 1 * sin(bounceAngle -180) -2;
+	pos2.z = 2.7 * cos(horseAngle -180) -1;
+	horseAngle += 0.003f;
 	if (horseAngle > 360) {
 		horseAngle = 0;
 	}
 
-	rotateAngle += 0.0003f;
+	rotateAngle += 0.003f;
 	if (rotateAngle > 360.0)
 		rotateAngle = 0;
 
-	bounceAngle += 0.0008f;
+	bounceAngle += 0.008f;
 	if (bounceAngle > 360){
 		bounceAngle = 0;
 	}
@@ -179,7 +166,7 @@ void display()
 	glm::mat4 modelmatrix = glm::translate(glm::mat4(1.0f), pos);
 	glm::mat4 modelmatrix2 = glm::translate(glm::mat4(1.0f), pos2);
 	modelmatrix = glm::rotate(modelmatrix, rotateAngle2, glm::vec3(0, 1, 0));
-	modelmatrix2 = glm::rotate(modelmatrix2,rotateAngle2 - 90 , glm::vec3(0, 1, 0));
+	modelmatrix2 = glm::rotate(modelmatrix2,rotateAngle2 - 180 , glm::vec3(0, 1, 0));
 	ModelViewMatrix = viewingMatrix * modelmatrix;
 	glUniformMatrix4fv(glGetUniformLocation(myShader->GetProgramObjID(), "ModelViewMatrix"), 1, GL_FALSE, &ModelViewMatrix[0][0]);
 	glm::mat3 normalMatrix = glm::inverseTranspose(glm::mat3(ModelViewMatrix));
@@ -216,6 +203,7 @@ void display()
 	
 	
 	woodenFloor.DrawElementsUsingVBO(myShader);
+	carouselFloor.DrawElementsUsingVBO(myShader);
 
 	glFlush();
 	glutSwapBuffers();
@@ -285,22 +273,40 @@ void init()
 	{
 		cout << " model failed to load " << endl;
 	}
-	if (objLoader.LoadModel("TestModels/woodenFloor.obj"))//returns true if the model is loaded
+	if (objLoader.LoadModel("TestModels/carouselFloor.obj"))//returns true if the model is loaded
 	{
 		cout << " model loaded " << endl;
 
+
 		//copy data from the OBJLoader object to the threedmodel class
-		woodenFloor.ConstructModelFromOBJLoader(objLoader);
-		woodenFloor.InitVBO(myShader);
+		carouselFloor.ConstructModelFromOBJLoader(objLoader);
+		
+		carouselFloor.InitVBO(myShader);
 		
 	}
 	else
 	{
 		cout << " model failed to load " << endl;
 	}
-	
+	if (objLoader.LoadModel("TestModels/carouselFloor.obj"))//returns true if the model is loaded
+	{
+		cout << " model loaded " << endl;
+
+
+		//copy data from the OBJLoader object to the threedmodel class
+		carouselFloor.ConstructModelFromOBJLoader(objLoader);
+		carouselFloor.CalcCentrePoint();
+		carouselFloor.CentreOnZero();
+		carouselFloor.InitVBO(myShader);
+
+	}
+	else
+	{
+		cout << " model failed to load " << endl;
+	}
 
 	
+	glBindTexture(GL_TEXTURE_2D, 0);
 	
 }
 
@@ -407,27 +413,27 @@ void processKeys()
 	float spinXinc = 0.0f, spinYinc = 0.0f, spinZinc = 0.0f;
 	if (Left)
 	{
-		camPos -= 0.01f * glm::normalize(glm::cross(camFront, camUp));
+		camPos -= 0.1f * glm::normalize(glm::cross(camFront, camUp));
 	}
 	if (Right)
 	{
-		camPos += 0.01f * glm::normalize(glm::cross(camFront, camUp));
+		camPos += 0.1f * glm::normalize(glm::cross(camFront, camUp));
 	}
 	if (Up)
 	{
-		camPos += 0.01f * camFront;
+		camPos += 0.1f * camFront;
 	}
 	if (Down)
 	{
-		camPos -= 0.01f * camFront;
+		camPos -= 0.1f * camFront;
 	}
 	if (Home)
 	{
-		camPos.y += 0.01f;
+		camPos.y += 0.1f;
 	}
 	if (End)
 	{
-		camPos.y -= 0.01f;
+		camPos.y -= 0.1f;
 	}
 
 }
