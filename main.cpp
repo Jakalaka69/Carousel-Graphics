@@ -29,7 +29,7 @@ CShader* myBasicShader;
 
 float amount = 0;
 float temp = 0.002f;
-	
+int cameraType = 0;
 
 CThreeDModel Horse,Horse2,Horse3,Horse4,grassFloor,carouselFloor; //A threeDModel object is needed for each model loaded
 COBJLoader objLoader;	//this object is used to load the 3d models.
@@ -44,7 +44,7 @@ glm::vec3 pos = glm::vec3(0.0f,0.0f,0.0f); //vector for the position of the obje
 glm::vec3 pos2 = glm::vec3(0.0f, 0.0f, 0.0f);
 glm::vec3 pos3 = glm::vec3(0.0f, 0.0f, 0.0f);
 glm::vec3 pos4 = glm::vec3(0.0f, 0.0f, 0.0f);
-glm::vec3 camPos = glm::vec3(0.0f, 0.0f, 0.0f);
+glm::vec3 camPos = glm::vec3(0.0f, 0.0f, 15.0f);
 glm::vec3 camFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 camUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
@@ -58,19 +58,19 @@ float lightAngle = 0.f;
 //Material properties
 float Material_Ambient[4] = {1.0f, 1.0f, 1.0f, 1.0f};
 float Material_Diffuse[4] = {0.7f, 0.7f, 0.7f, 1.0f};
-float Material_Specular[4] = {0.0f,0.0f,0.0f,1.0f};
+float Material_Specular[4] = {1.0f,1.0f,1.0f,1.0f};
 float Material_Shininess = 50;
 
 //Light Properties
 float Light_Ambient[4] = {1.0f, 1.0f, 1.0f, 1.0f};
 float Light_Diffuse[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-float Light_Specular[4] = { 0.0f,0.0f,0.0f,0.0f};
+float Light_Specular[4] = { 1.0f,1.0f,1.0f,1.0f};
 float LightPos[4] = {0.0f, 1.0f, 0.0f, 0.0f};
 
 //
 int	mouse_x=0, mouse_y=0;
 bool LeftPressed = false;
-int screenWidth=800, screenHeight=600;
+int screenWidth=1920, screenHeight=1080;
 float lastX = 400, lastY = 300;
 float yaw = -90.0f;
 float pitch = 0.0f;
@@ -122,12 +122,27 @@ void display()
 	//----------------------------------------------------------------------
 
 	glm::mat4 viewingMatrix = glm::mat4(1.0f);
-	
-	viewingMatrix = glm::lookAt(camPos, camPos + camFront, camUp);
-
+	if (firstLoop == true) {
+		viewingMatrix = glm::lookAt(glm::vec3(15.0f,5.0f,0.0f), glm::vec3(0.0f, 0.0f, 0.0f), camUp);
+		firstLoop = false;
+	}
+	if (cameraType == 0) {
+		viewingMatrix = glm::lookAt(camPos, camPos + camFront, camUp);
+	}
+	else if (cameraType == 1) {
+		
+		camPos.x = 3 * sin(rotateAngle);
+		camPos.z = 3 * cos(rotateAngle);
+		camPos.y = -pos.y - 4.5;
+		
+		viewingMatrix = glm::lookAt(camPos, camPos + camFront, camUp);
+		
+		
+		
+	}
 	
 	if (firstLoop == true) {
-		viewingMatrix = glm::translate(viewingMatrix, glm::vec3(0, -30, 0));
+		//viewingMatrix = glm::translate(viewingMatrix, glm::vec3(0, -30, 0));
 		firstLoop = false;
 	}
 	
@@ -144,10 +159,10 @@ void display()
 
 	glUniformMatrix4fv(glGetUniformLocation(myShader->GetProgramObjID(), "ViewMatrix"), 1, GL_FALSE, &viewingMatrix[0][0]);
 	
-	pos.y = 0.5 * sin(bounceAngle) - 3.5;
-	pos2.y = 0.5 * sin(bounceAngle - 60) -3.5;
-	pos3.y = 0.5 * sin(bounceAngle - 300) - 3.5;
-	pos4.y = 0.5 * sin(bounceAngle - 180) - 3.5;
+	pos.y = 0.5 * sin(bounceAngle) - 3.8;
+	pos2.y = 0.5 * sin(bounceAngle - 60) - 3.8;
+	pos3.y = 0.5 * sin(bounceAngle - 300) - 3.8;
+	pos4.y = 0.5 * sin(bounceAngle - 180) - 3.8;
 
 	rotateAngle += 0.005f;
 	if (rotateAngle > 360.0)
@@ -393,7 +408,13 @@ void keyboard(unsigned char key, int x, int y)
 	case ' ':
 		Home = true;
 		break;
+	case 'c':
+		cameraType++;
+		if (cameraType > 1) {
+			cameraType = 0;
+		}
 	}
+
 }
 
 void keyboardUp(unsigned char key, int x, int y)
@@ -433,8 +454,8 @@ void motion(int x, int y) {
 
 	
 
-	yaw -= 0.4f * (400 - x);
-	pitch += 0.4f * (300 - y);
+	yaw -= 0.4f * (960 - x);
+	pitch += 0.4f * (540 - y);
 
 	if (pitch > 89.0f)
 		pitch = 89.0f;
@@ -447,7 +468,7 @@ void motion(int x, int y) {
 	direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
 	camFront = glm::normalize(direction);
 	
-	glutWarpPointer(400, 300);
+	glutWarpPointer(960, 540);
 	
 
 };
@@ -500,7 +521,7 @@ int main(int argc, char **argv)
 
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
 	glutInitWindowSize(screenWidth, screenHeight);
-	glutInitWindowPosition(100, 100);
+	glutInitWindowPosition(0, 0);
 	glutCreateWindow("OpenGL FreeGLUT Example: Obj loading");
 
 	//This initialises glew - it must be called after the window is created.
