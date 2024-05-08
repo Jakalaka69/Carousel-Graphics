@@ -31,7 +31,7 @@ float amount = 0;
 float temp = 0.002f;
 	
 
-CThreeDModel model,model2,woodenFloor,carouselFloor; //A threeDModel object is needed for each model loaded
+CThreeDModel Horse,Horse2,Horse3,Horse4,grassFloor,carouselFloor; //A threeDModel object is needed for each model loaded
 COBJLoader objLoader;	//this object is used to load the 3d models.
 ///END MODEL LOADING
 
@@ -42,6 +42,8 @@ glm::mat4 objectRotation;
 glm::vec3 translation = glm::vec3(0.0, 0.0, 0.0);
 glm::vec3 pos = glm::vec3(0.0f,0.0f,0.0f); //vector for the position of the object.
 glm::vec3 pos2 = glm::vec3(0.0f, 0.0f, 0.0f);
+glm::vec3 pos3 = glm::vec3(0.0f, 0.0f, 0.0f);
+glm::vec3 pos4 = glm::vec3(0.0f, 0.0f, 0.0f);
 glm::vec3 camPos = glm::vec3(0.0f, 0.0f, 0.0f);
 glm::vec3 camFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 camUp = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -51,18 +53,19 @@ float bounceAngle = 0.0f;
 float rotateAngle = 0.0f;
 float camRight = 0.0;
 float camFoward = 0.0;
-
+float lightAngle = 0.f;
 
 //Material properties
-float Material_Ambient[4] = {0.1f, 0.1f, 0.1f, 1.0f};
-float Material_Diffuse[4] = {0.8f, 0.8f, 0.5f, 1.0f};
-float Material_Specular[4] = {0.9f,0.9f,0.8f,1.0f};
+float Material_Ambient[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+float Material_Diffuse[4] = {0.7f, 0.7f, 0.7f, 1.0f};
+float Material_Specular[4] = {0.0f,0.0f,0.0f,1.0f};
 float Material_Shininess = 50;
 
 //Light Properties
-float Light_Ambient_And_Diffuse[4] = {0.8f, 0.8f, 0.6f, 1.0f};
-float Light_Specular[4] = {1.0f,1.0f,1.0f,1.0f};
-float LightPos[4] = {0.0f, 0.0f, 1.0f, 0.0f};
+float Light_Ambient[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+float Light_Diffuse[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+float Light_Specular[4] = { 0.0f,0.0f,0.0f,0.0f};
+float LightPos[4] = {0.0f, 1.0f, 0.0f, 0.0f};
 
 //
 int	mouse_x=0, mouse_y=0;
@@ -129,8 +132,8 @@ void display()
 	}
 	
 	glUniform4fv(glGetUniformLocation(myShader->GetProgramObjID(), "LightPos"), 1, LightPos);
-	glUniform4fv(glGetUniformLocation(myShader->GetProgramObjID(), "light_ambient"), 1, Light_Ambient_And_Diffuse);
-	glUniform4fv(glGetUniformLocation(myShader->GetProgramObjID(), "light_diffuse"), 1, Light_Ambient_And_Diffuse);
+	glUniform4fv(glGetUniformLocation(myShader->GetProgramObjID(), "light_ambient"), 1, Light_Ambient);
+	glUniform4fv(glGetUniformLocation(myShader->GetProgramObjID(), "light_diffuse"), 1, Light_Diffuse);
 	glUniform4fv(glGetUniformLocation(myShader->GetProgramObjID(), "light_specular"), 1, Light_Specular);
 
 	glUniform4fv(glGetUniformLocation(myShader->GetProgramObjID(), "material_ambient"), 1, Material_Ambient);
@@ -140,45 +143,59 @@ void display()
 
 
 	glUniformMatrix4fv(glGetUniformLocation(myShader->GetProgramObjID(), "ViewMatrix"), 1, GL_FALSE, &viewingMatrix[0][0]);
-	pos.x = 2.7 * sin(horseAngle) ;
-	pos.y = 2 + 1 * sin(bounceAngle) -2;
-	pos.z = 2.7 * cos(horseAngle);
 	
-	pos2.x = 2.7 * sin(horseAngle - 180)-0.5;
-	pos2.y = 2 + 1 * sin(bounceAngle -180) -2;
-	pos2.z = 2.7 * cos(horseAngle -180) -1;
-	horseAngle += 0.003f;
-	if (horseAngle > 360) {
-		horseAngle = 0;
-	}
+	pos.y = 0.5 * sin(bounceAngle) - 3.5;
+	pos2.y = 0.5 * sin(bounceAngle - 60) -3.5;
+	pos3.y = 0.5 * sin(bounceAngle - 300) - 3.5;
+	pos4.y = 0.5 * sin(bounceAngle - 180) - 3.5;
 
-	rotateAngle += 0.003f;
+	rotateAngle += 0.005f;
 	if (rotateAngle > 360.0)
 		rotateAngle = 0;
 
-	bounceAngle += 0.008f;
+	bounceAngle += 0.01f;
 	if (bounceAngle > 360){
 		bounceAngle = 0;
 	}
-
-	float rotateAngle2 = rotateAngle + 89.7;
+	
+	
 	
 	glm::mat4 modelmatrix = glm::translate(glm::mat4(1.0f), pos);
-	glm::mat4 modelmatrix2 = glm::translate(glm::mat4(1.0f), pos2);
-	modelmatrix = glm::rotate(modelmatrix, rotateAngle2, glm::vec3(0, 1, 0));
-	modelmatrix2 = glm::rotate(modelmatrix2,rotateAngle2 - 180 , glm::vec3(0, 1, 0));
+	
+	
+	
+	modelmatrix = glm::rotate(modelmatrix, rotateAngle, glm::vec3(0, 1, 0));
 	ModelViewMatrix = viewingMatrix * modelmatrix;
 	glUniformMatrix4fv(glGetUniformLocation(myShader->GetProgramObjID(), "ModelViewMatrix"), 1, GL_FALSE, &ModelViewMatrix[0][0]);
 	glm::mat3 normalMatrix = glm::inverseTranspose(glm::mat3(ModelViewMatrix));
 	glUniformMatrix3fv(glGetUniformLocation(myShader->GetProgramObjID(), "NormalMatrix"), 1, GL_FALSE, &normalMatrix[0][0]);
-	model.DrawElementsUsingVBO(myShader);
+	Horse.DrawElementsUsingVBO(myShader);
 
-	ModelViewMatrix = viewingMatrix * modelmatrix2;
+	modelmatrix = glm::translate(glm::mat4(1.0f), pos2);
+	modelmatrix = glm::rotate(modelmatrix, rotateAngle, glm::vec3(0, 1, 0));
+	ModelViewMatrix = viewingMatrix * modelmatrix;
 	glUniformMatrix4fv(glGetUniformLocation(myShader->GetProgramObjID(), "ModelViewMatrix"), 1, GL_FALSE, &ModelViewMatrix[0][0]);
 	normalMatrix = glm::inverseTranspose(glm::mat3(ModelViewMatrix));
 	glUniformMatrix3fv(glGetUniformLocation(myShader->GetProgramObjID(), "NormalMatrix"), 1, GL_FALSE, &normalMatrix[0][0]);
+	Horse2.DrawElementsUsingVBO(myShader);
+
+	modelmatrix = glm::translate(glm::mat4(1.0f), pos3);
+	modelmatrix = glm::rotate(modelmatrix, rotateAngle, glm::vec3(0, 1, 0));
+	ModelViewMatrix = viewingMatrix * modelmatrix;
+	glUniformMatrix4fv(glGetUniformLocation(myShader->GetProgramObjID(), "ModelViewMatrix"), 1, GL_FALSE, &ModelViewMatrix[0][0]);
+	normalMatrix = glm::inverseTranspose(glm::mat3(ModelViewMatrix));
+	glUniformMatrix3fv(glGetUniformLocation(myShader->GetProgramObjID(), "NormalMatrix"), 1, GL_FALSE, &normalMatrix[0][0]);
+	Horse3.DrawElementsUsingVBO(myShader);
+
+	modelmatrix = glm::translate(glm::mat4(1.0f), pos4);
+	modelmatrix = glm::rotate(modelmatrix, rotateAngle, glm::vec3(0, 1, 0));
+	ModelViewMatrix = viewingMatrix * modelmatrix;
+	glUniformMatrix4fv(glGetUniformLocation(myShader->GetProgramObjID(), "ModelViewMatrix"), 1, GL_FALSE, &ModelViewMatrix[0][0]);
+	normalMatrix = glm::inverseTranspose(glm::mat3(ModelViewMatrix));
+	glUniformMatrix3fv(glGetUniformLocation(myShader->GetProgramObjID(), "NormalMatrix"), 1, GL_FALSE, &normalMatrix[0][0]);
+	Horse4.DrawElementsUsingVBO(myShader);
 	
-	model2.DrawElementsUsingVBO(myShader);
+	
 
 	//-------------------------------------------------------------------------------------------------------
 
@@ -199,11 +216,17 @@ void display()
 	glUniformMatrix4fv(glGetUniformLocation(myShader->GetProgramObjID(), "ModelViewMatrix"), 1, GL_FALSE, &ModelViewMatrix[0][0]);
 	normalMatrix = glm::inverseTranspose(glm::mat3(ModelViewMatrix));
 	glUniformMatrix3fv(glGetUniformLocation(myShader->GetProgramObjID(), "NormalMatrix"), 1, GL_FALSE, &normalMatrix[0][0]);
-
 	
-	
-	woodenFloor.DrawElementsUsingVBO(myShader);
 	carouselFloor.DrawElementsUsingVBO(myShader);
+
+	ModelViewMatrix = glm::translate(viewingMatrix, glm::vec3(0, -5.2, 0));
+	glUniformMatrix4fv(glGetUniformLocation(myShader->GetProgramObjID(), "ModelViewMatrix"), 1, GL_FALSE, &ModelViewMatrix[0][0]);
+	normalMatrix = glm::inverseTranspose(glm::mat3(ModelViewMatrix));
+	glUniformMatrix3fv(glGetUniformLocation(myShader->GetProgramObjID(), "NormalMatrix"), 1, GL_FALSE, &normalMatrix[0][0]);
+	
+	
+	grassFloor.DrawElementsUsingVBO(myShader);
+	
 
 	glFlush();
 	glutSwapBuffers();
@@ -250,55 +273,76 @@ void init()
 	objectRotation = glm::mat4(1.0f);
 	
 	cout << " loading model " << endl;
-	if(objLoader.LoadModel("TestModels/colorHorse.obj"))//returns true if the model is loaded
+	if (objLoader.LoadModel("TestModels/Horse1.obj"))//returns true if the model is loaded
 	{
-		cout << " model loaded " << endl;		
+		cout << " model loaded " << endl;
+		Horse.ConstructModelFromOBJLoader(objLoader);
+		Horse.CalcCentrePoint();
+		Horse.CentreOnZero();
+		Horse.InitVBO(myShader);
+	}
+	else
+	{
+		cout << " model failed to load " << endl;
+	}
+	if (objLoader.LoadModel("TestModels/Horse2.obj"))//returns true if the model is loaded
+	{
+		cout << " model loaded " << endl;
+		Horse2.ConstructModelFromOBJLoader(objLoader);
+		Horse2.CalcCentrePoint();
+		Horse2.CentreOnZero();
+		Horse2.InitVBO(myShader);
+	}
+	else
+	{
+		cout << " model failed to load " << endl;
+	}
+	if (objLoader.LoadModel("TestModels/Horse3.obj"))//returns true if the model is loaded
+	{
+		cout << " model loaded " << endl;
+		Horse3.ConstructModelFromOBJLoader(objLoader);
+		Horse3.CalcCentrePoint();
+		Horse3.CentreOnZero();
+		Horse3.InitVBO(myShader);
+	}
+	else
+	{
+		cout << " model failed to load " << endl;
+	}
+	if (objLoader.LoadModel("TestModels/Horse4.obj"))//returns true if the model is loaded
+	{
+		cout << " model loaded " << endl;
+		Horse4.ConstructModelFromOBJLoader(objLoader);
+		Horse4.CalcCentrePoint();
+		Horse4.CentreOnZero();
+		Horse4.InitVBO(myShader);
+	}
+	else
+	{
+		cout << " model failed to load " << endl;
+	}
 
-		//copy data from the OBJLoader object to the threedmodel class
-		model.ConstructModelFromOBJLoader(objLoader);
-		model2.ConstructModelFromOBJLoader(objLoader);
-		//if you want to translate the object to the origin of the screen,
-		//first calculate the centre of the object, then move all the vertices
-		//back so that the centre is on the origin.
-		model.CalcCentrePoint();
-		model.CentreOnZero();
-
-		model2.CalcCentrePoint();
-		model2.CentreOnZero();
 	
-		model.InitVBO(myShader);
-		model2.InitVBO(myShader);
-	}
-	else
-	{
-		cout << " model failed to load " << endl;
-	}
-	if (objLoader.LoadModel("TestModels/carouselFloor.obj"))//returns true if the model is loaded
+	if (objLoader.LoadModel("TestModels/carousel.obj"))//returns true if the model is loaded
 	{
 		cout << " model loaded " << endl;
-
-
-		//copy data from the OBJLoader object to the threedmodel class
-		carouselFloor.ConstructModelFromOBJLoader(objLoader);
-		
-		carouselFloor.InitVBO(myShader);
-		
-	}
-	else
-	{
-		cout << " model failed to load " << endl;
-	}
-	if (objLoader.LoadModel("TestModels/carouselFloor.obj"))//returns true if the model is loaded
-	{
-		cout << " model loaded " << endl;
-
-
-		//copy data from the OBJLoader object to the threedmodel class
 		carouselFloor.ConstructModelFromOBJLoader(objLoader);
 		carouselFloor.CalcCentrePoint();
 		carouselFloor.CentreOnZero();
 		carouselFloor.InitVBO(myShader);
 
+	}
+	else
+	{
+		cout << " model failed to load " << endl;
+	}
+	if (objLoader.LoadModel("TestModels/grassFloor.obj"))//returns true if the model is loaded
+	{
+		cout << " model loaded " << endl;
+		grassFloor.ConstructModelFromOBJLoader(objLoader);
+		grassFloor.CalcCentrePoint();
+		grassFloor.CentreOnZero();
+		grassFloor.InitVBO(myShader);
 	}
 	else
 	{
