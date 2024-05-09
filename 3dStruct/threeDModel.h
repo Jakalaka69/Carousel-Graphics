@@ -5,6 +5,7 @@
 #include <vector>
 #include <tuple>
 #include <string>
+#include <list>
 
 #include "./../GL/glew.h"
 #include "../Obj/OBJLoader.h"
@@ -76,7 +77,7 @@ public:
 	void						DrawElementsUsingVBO(CShader* myShader);
 	void						DrawBoundingBox(CShader* shader);
 	void						DrawAllBoxesForOctreeNodes(CShader* shader);
-	void						DrawOctreeLeaves(CShader* shader);
+	void						DrawOctreeLeaves(CShader* shader );
 	
 	int							GetOctreeTriangleListSize();
 	int							GetOctreeVertexListSize();

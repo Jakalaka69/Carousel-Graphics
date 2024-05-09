@@ -31,7 +31,7 @@ float amount = 0;
 float temp = 0.002f;
 int cameraType = 0;
 
-CThreeDModel Horse,Horse2,Horse3,Horse4,grassFloor,carouselFloor; //A threeDModel object is needed for each model loaded
+CThreeDModel Horse,Horse2,Horse3,Horse4,grassFloor,carouselFloor,Terrain; //A threeDModel object is needed for each model loaded
 COBJLoader objLoader;	//this object is used to load the 3d models.
 ///END MODEL LOADING
 
@@ -54,6 +54,9 @@ float rotateAngle = PI;
 float camRight = 0.0;
 float camFoward = 0.0;
 float lightAngle = 0.f;
+float lastCamX = 0.0f;
+float lastCamY = 0.0f;
+float lastCamZ = 0.0f;
 
 //Material properties
 float Material_Ambient[4] = {1.0f, 1.0f, 1.0f, 1.0f};
@@ -88,6 +91,9 @@ bool upOn = false;
 bool rightOn = false;
 bool firstLoop = true;
 bool firstmouse = true;
+
+double maxX,maxY,maxZ,minX,minY,minZ;
+
 
 
 float spin=180;
@@ -143,7 +149,7 @@ void display()
 	glm::mat4 viewingMatrix = glm::mat4(1.0f);
 	
 	if(firstLoop == true){
-		viewingMatrix = glm::lookAt(glm::vec3(10.0f,0.0f,0.0f), glm::vec3(0.0f, 0.0f, 0.0f), camUp);
+		viewingMatrix = glm::lookAt(glm::vec3(10.0f,0.0f,0.0f), pos, camUp);
 	}
 	
 	if (cameraType == 0) {
@@ -185,11 +191,33 @@ void display()
 	glUniformMatrix4fv(glGetUniformLocation(myShader->GetProgramObjID(), "ModelViewMatrix"), 1, GL_FALSE, &ModelViewMatrix[0][0]);
 	glm::mat3 normalMatrix = glm::inverseTranspose(glm::mat3(ModelViewMatrix));
 	glUniformMatrix3fv(glGetUniformLocation(myShader->GetProgramObjID(), "NormalMatrix"), 1, GL_FALSE, &normalMatrix[0][0]);
+
+	
 	Horse.DrawElementsUsingVBO(myShader);
+	Horse.DrawBoundingBox(myShader);
+	Horse.CalcBoundingBox(maxX, maxY, maxZ, minX, minY, minZ);
+	
+	
+	
+	
+	
+	
+
+	if(!(camPos.x > minX) && !(camPos.x < maxX)) {
+		
+		if (lastCamX > camPos.x) {
+			camPos.x = camPos.x + 0.1;
+		}
+		else if (lastCamX < camPos.x) {
+			camPos.x = camPos.x - 0.1;
+		}
+	}
+
 	
 
 
-	
+
+	lastCamX = camPos.x;
 
 	modelmatrix = glm::translate(glm::mat4(1.0f), pos2);
 	modelmatrix = glm::rotate(modelmatrix, rotateAngle, glm::vec3(0, 1, 0));
@@ -237,6 +265,7 @@ void display()
 	glUniformMatrix3fv(glGetUniformLocation(myShader->GetProgramObjID(), "NormalMatrix"), 1, GL_FALSE, &normalMatrix[0][0]);
 	
 	carouselFloor.DrawElementsUsingVBO(myShader);
+	Terrain.DrawElementsUsingVBO(myShader);
 
 	ModelViewMatrix = glm::translate(viewingMatrix, glm::vec3(0, -5.2, 0));
 	glUniformMatrix4fv(glGetUniformLocation(myShader->GetProgramObjID(), "ModelViewMatrix"), 1, GL_FALSE, &ModelViewMatrix[0][0]);
@@ -245,6 +274,7 @@ void display()
 	
 	
 	grassFloor.DrawElementsUsingVBO(myShader);
+	
 	
 
 	glFlush();
@@ -364,6 +394,7 @@ void init()
 	{
 		cout << " model failed to load " << endl;
 	}
+	
 
 	
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -414,6 +445,7 @@ void keyboard(unsigned char key, int x, int y)
 		if (cameraType > 1) {
 			cameraType = 0;
 		}
+		break;
 	}
 
 }

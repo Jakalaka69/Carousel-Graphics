@@ -6,8 +6,11 @@ using namespace std;
 #include "Octree.h"
 #include "./../Box/Box.h"
 #include "../3DStruct/threeDModel.h"
+#include <list>
+
 
 const int FACE_LIMIT = 1;
+
 
 /*
 *	Method	: Octree
@@ -543,17 +546,22 @@ void COctree::CalculatePrimitiveWithinSubdividedOctreeCells(CThreeDModel* obj, i
 *
 *	Returns	: void
 */
+
 void COctree::DrawBoundingBox(CShader* myShader)
 {
 	if (m_pobBox == nullptr)
 	{
 		m_pobBox = new CBox();
 		m_pobBox->constructGeometry(myShader, m_dMinX, m_dMinY, m_dMinZ, m_dMaxX, m_dMaxY, m_dMaxZ);
+		
 	}
 	else
 	{
 		m_pobBox->render();
+		
 	}
+	
+	
 }
 
 /*
@@ -567,8 +575,10 @@ void COctree::DrawBoundingBox(CShader* myShader)
 */
 void COctree::DrawAllBoxes(CShader* myShader)
 {
+	
 	if (m_iLevel >= MAX_DEPTH) //leaf
 	{
+		
 		//draw the bounding box for a leaf node.
 		DrawBoundingBox(myShader);
 	}
@@ -586,6 +596,7 @@ void COctree::DrawAllBoxes(CShader* myShader)
 	}
 }
 
+
 /*
 *	Method	: DrawOctreeLeaves
 *
@@ -595,12 +606,16 @@ void COctree::DrawAllBoxes(CShader* myShader)
 *
 *	Returns	: void
 */
+
 void COctree::DrawOctreeLeaves(CShader* myShader)
 {
+	
 	if (m_iLevel >= MAX_DEPTH) //leaf
 	{
+		
 		//draw the bounding box for a leaf node.
 		DrawBoundingBox(myShader);
+		
 	}
 	else
 	{
@@ -611,7 +626,9 @@ void COctree::DrawOctreeLeaves(CShader* myShader)
 				m_pobChildren[i]->DrawOctreeLeaves(myShader);
 		}
 	}
+	
 }
+
 
 /*
 *	Method	: CalcVertexNormals

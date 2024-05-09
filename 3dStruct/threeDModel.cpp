@@ -1,12 +1,14 @@
 #include "./../GL/glew.h"
 #include "threeDModel.h"
 #include "../Obj/OBJLoader.h"
+
 //#include <gl/glext.h>
 #include <math.h>
 #include "../texturehandler/texturehandler.h"
 #include "../Octree/Octree.h"
 #include "../Utilities/IntersectionTests.h"
 #include "../shaders/Shader.h"
+#include <list>
 
 /*
  *	Method	: ThreeDModel
@@ -806,6 +808,7 @@ void CThreeDModel::DrawElementsUsingVBO(CShader * myShader)
  */
 void CThreeDModel::DrawBoundingBox(CShader* shader)
 {
+	std::list<float> list;
 	if (m_pobOctree != nullptr)
 	{
 		m_pobOctree->DrawBoundingBox(shader);
@@ -844,6 +847,7 @@ void CThreeDModel::DrawOctreeLeaves(CShader* shader)
 	{
 		m_pobOctree->DrawOctreeLeaves(shader);
 	}
+	
 }
 /*
  *	Method	: DeleteVertexFaceData
