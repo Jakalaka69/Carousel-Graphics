@@ -44,13 +44,13 @@ glm::vec3 pos = glm::vec3(0.0f,0.0f,0.0f); //vector for the position of the obje
 glm::vec3 pos2 = glm::vec3(0.0f, 0.0f, 0.0f);
 glm::vec3 pos3 = glm::vec3(0.0f, 0.0f, 0.0f);
 glm::vec3 pos4 = glm::vec3(0.0f, 0.0f, 0.0f);
-glm::vec3 camPos = glm::vec3(0.0f, 0.0f, 15.0f);
+glm::vec3 camPos = glm::vec3(10.0f, 0.0f, 0.0f);
 glm::vec3 camFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 camUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
 float horseAngle = 0.0f;
 float bounceAngle = 0.0f;
-float rotateAngle = 0.0f;
+float rotateAngle = PI;
 float camRight = 0.0;
 float camFoward = 0.0;
 float lightAngle = 0.f;
@@ -89,6 +89,7 @@ bool rightOn = false;
 bool firstLoop = true;
 bool firstmouse = true;
 
+
 float spin=180;
 float speed=0;
 
@@ -120,32 +121,43 @@ void display()
 
 
 	//----------------------------------------------------------------------
+	rotateAngle += 0.005f;
+	if (rotateAngle > 360.0)
+		rotateAngle = 0;
+
+	bounceAngle += 0.01f;
+	if (bounceAngle > 360) {
+		bounceAngle = 0;
+	}
+
+	horseAngle += 0.005f;
+	if (horseAngle > 360.0)
+		horseAngle = 0;
+
+	pos.y = 0.5 * sin(bounceAngle) -4.5;
+	pos2.y = 0.5 * sin(bounceAngle - 60)-4.5;
+	pos3.y = 0.5 * sin(bounceAngle - 300)-4.5;
+	pos4.y = 0.5 * sin(bounceAngle - 180)-4.5;
+	
 
 	glm::mat4 viewingMatrix = glm::mat4(1.0f);
-	if (firstLoop == true) {
-		viewingMatrix = glm::lookAt(glm::vec3(15.0f,5.0f,0.0f), glm::vec3(0.0f, 0.0f, 0.0f), camUp);
-		firstLoop = false;
+	
+	if(firstLoop == true){
+		viewingMatrix = glm::lookAt(glm::vec3(10.0f,0.0f,0.0f), glm::vec3(0.0f, 0.0f, 0.0f), camUp);
 	}
+	
 	if (cameraType == 0) {
 		viewingMatrix = glm::lookAt(camPos, camPos + camFront, camUp);
 	}
 	else if (cameraType == 1) {
 		
-		camPos.x = 3 * sin(rotateAngle);
-		camPos.z = 3 * cos(rotateAngle);
-		camPos.y = -pos.y - 4.5;
-		
+		camPos.x = 3.5 * sin(rotateAngle-41);
+		camPos.z = 3.5 * cos(rotateAngle-41);
+		camPos.y = pos.y + 3.6;
 		viewingMatrix = glm::lookAt(camPos, camPos + camFront, camUp);
-		
-		
-		
+
 	}
-	
-	if (firstLoop == true) {
-		//viewingMatrix = glm::translate(viewingMatrix, glm::vec3(0, -30, 0));
-		firstLoop = false;
-	}
-	
+
 	glUniform4fv(glGetUniformLocation(myShader->GetProgramObjID(), "LightPos"), 1, LightPos);
 	glUniform4fv(glGetUniformLocation(myShader->GetProgramObjID(), "light_ambient"), 1, Light_Ambient);
 	glUniform4fv(glGetUniformLocation(myShader->GetProgramObjID(), "light_diffuse"), 1, Light_Diffuse);
@@ -156,23 +168,12 @@ void display()
 	glUniform4fv(glGetUniformLocation(myShader->GetProgramObjID(), "material_specular"), 1, Material_Specular);
 	glUniform1f(glGetUniformLocation(myShader->GetProgramObjID(), "material_shininess"), Material_Shininess);
 
-
+	
 	glUniformMatrix4fv(glGetUniformLocation(myShader->GetProgramObjID(), "ViewMatrix"), 1, GL_FALSE, &viewingMatrix[0][0]);
 	
-	pos.y = 0.5 * sin(bounceAngle) - 3.8;
-	pos2.y = 0.5 * sin(bounceAngle - 60) - 3.8;
-	pos3.y = 0.5 * sin(bounceAngle - 300) - 3.8;
-	pos4.y = 0.5 * sin(bounceAngle - 180) - 3.8;
-
-	rotateAngle += 0.005f;
-	if (rotateAngle > 360.0)
-		rotateAngle = 0;
-
-	bounceAngle += 0.01f;
-	if (bounceAngle > 360){
-		bounceAngle = 0;
-	}
 	
+
+
 	
 	
 	glm::mat4 modelmatrix = glm::translate(glm::mat4(1.0f), pos);
@@ -185,6 +186,10 @@ void display()
 	glm::mat3 normalMatrix = glm::inverseTranspose(glm::mat3(ModelViewMatrix));
 	glUniformMatrix3fv(glGetUniformLocation(myShader->GetProgramObjID(), "NormalMatrix"), 1, GL_FALSE, &normalMatrix[0][0]);
 	Horse.DrawElementsUsingVBO(myShader);
+	
+
+
+	
 
 	modelmatrix = glm::translate(glm::mat4(1.0f), pos2);
 	modelmatrix = glm::rotate(modelmatrix, rotateAngle, glm::vec3(0, 1, 0));
@@ -193,6 +198,8 @@ void display()
 	normalMatrix = glm::inverseTranspose(glm::mat3(ModelViewMatrix));
 	glUniformMatrix3fv(glGetUniformLocation(myShader->GetProgramObjID(), "NormalMatrix"), 1, GL_FALSE, &normalMatrix[0][0]);
 	Horse2.DrawElementsUsingVBO(myShader);
+
+	
 
 	modelmatrix = glm::translate(glm::mat4(1.0f), pos3);
 	modelmatrix = glm::rotate(modelmatrix, rotateAngle, glm::vec3(0, 1, 0));
@@ -220,10 +227,7 @@ void display()
 	glUniformMatrix4fv(projMatLocation, 1, GL_FALSE, &ProjectionMatrix[0][0]);
 	glUniformMatrix4fv(glGetUniformLocation(myBasicShader->GetProgramObjID(), "ModelViewMatrix"), 1, GL_FALSE, &ModelViewMatrix[0][0]);
 
-	//model.DrawAllBoxesForOctreeNodes(myBasicShader);
-	//model.DrawBoundingBox(myBasicShader);
-	//model.DrawOctreeLeaves(myBasicShader);
-
+	
 	//switch back to the shader for textures and lighting on the objects.
 	glUseProgram(myShader->GetProgramObjID());  // use the shader
 
@@ -292,8 +296,8 @@ void init()
 	{
 		cout << " model loaded " << endl;
 		Horse.ConstructModelFromOBJLoader(objLoader);
-		Horse.CalcCentrePoint();
-		Horse.CentreOnZero();
+		//Horse.CalcCentrePoint();
+		//Horse.CentreOnZero();
 		Horse.InitVBO(myShader);
 	}
 	else
@@ -304,8 +308,7 @@ void init()
 	{
 		cout << " model loaded " << endl;
 		Horse2.ConstructModelFromOBJLoader(objLoader);
-		Horse2.CalcCentrePoint();
-		Horse2.CentreOnZero();
+		
 		Horse2.InitVBO(myShader);
 	}
 	else
@@ -316,8 +319,7 @@ void init()
 	{
 		cout << " model loaded " << endl;
 		Horse3.ConstructModelFromOBJLoader(objLoader);
-		Horse3.CalcCentrePoint();
-		Horse3.CentreOnZero();
+		
 		Horse3.InitVBO(myShader);
 	}
 	else
@@ -328,8 +330,7 @@ void init()
 	{
 		cout << " model loaded " << endl;
 		Horse4.ConstructModelFromOBJLoader(objLoader);
-		Horse4.CalcCentrePoint();
-		Horse4.CentreOnZero();
+		
 		Horse4.InitVBO(myShader);
 	}
 	else
@@ -442,32 +443,34 @@ void motion(int x, int y) {
 
 	
 	
-	
-	if (firstmouse)
-	{
-		lastX = x;
-		lastY = y;
-		firstmouse = false;
+	if (!firstLoop) {
+		if (firstmouse)
+		{
+			lastX = x;
+			lastY = y;
+			firstmouse = false;
+		}
+
+
+
+
+
+		yaw -= 0.4f * (960 - x);
+		pitch += 0.4f * (540 - y);
+
+		if (pitch > 89.0f)
+			pitch = 89.0f;
+		if (pitch < -89.0f)
+			pitch = -89.0f;
+
+		glm::vec3 direction;
+		direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+		direction.y = sin(glm::radians(pitch));
+		direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+		camFront = glm::normalize(direction);
+		
 	}
-
-	
-
-	
-
-	yaw -= 0.4f * (960 - x);
-	pitch += 0.4f * (540 - y);
-
-	if (pitch > 89.0f)
-		pitch = 89.0f;
-	if (pitch < -89.0f)
-		pitch = -89.0f;
-
-	glm::vec3 direction;
-	direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-	direction.y = sin(glm::radians(pitch));
-	direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-	camFront = glm::normalize(direction);
-	
+	firstLoop = false;
 	glutWarpPointer(960, 540);
 	
 
@@ -541,7 +544,7 @@ int main(int argc, char **argv)
 
 	//initialise the objects for rendering
 	init();
-
+	glutFullScreen();
 	glutReshapeFunc(reshape);
 	//specify which function will be called to refresh the screen.
 	glutDisplayFunc(display);
