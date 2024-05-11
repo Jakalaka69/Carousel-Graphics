@@ -47,6 +47,7 @@ glm::vec3 pos4 = glm::vec3(0.0f, 0.0f, 0.0f);
 glm::vec3 camPos = glm::vec3(10.0f, 0.0f, 0.0f);
 glm::vec3 camFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 camUp = glm::vec3(0.0f, 1.0f, 0.0f);
+glm::vec3 lastCamPos = glm::vec3(0.0f, 0.0f, 0.0f);
 
 float horseAngle = 0.0f;
 float bounceAngle = 0.0f;
@@ -54,9 +55,7 @@ float rotateAngle = PI;
 float camRight = 0.0;
 float camFoward = 0.0;
 float lightAngle = 0.f;
-float lastCamX = 0.0f;
-float lastCamY = 0.0f;
-float lastCamZ = 0.0f;
+
 
 //Material properties
 float Material_Ambient[4] = {1.0f, 1.0f, 1.0f, 1.0f};
@@ -73,7 +72,7 @@ float LightPos[4] = {0.0f, 1.0f, 0.0f, 0.0f};
 //
 int	mouse_x=0, mouse_y=0;
 bool LeftPressed = false;
-int screenWidth=1920, screenHeight=1080;
+int screenWidth=800, screenHeight=600;
 float lastX = 400, lastY = 300;
 float yaw = -90.0f;
 float pitch = 0.0f;
@@ -91,6 +90,7 @@ bool upOn = false;
 bool rightOn = false;
 bool firstLoop = true;
 bool firstmouse = true;
+bool collision = true;
 
 double maxX,maxY,maxZ,minX,minY,minZ;
 
@@ -148,20 +148,33 @@ void display()
 
 	glm::mat4 viewingMatrix = glm::mat4(1.0f);
 	
-	if(firstLoop == true){
-		viewingMatrix = glm::lookAt(glm::vec3(10.0f,0.0f,0.0f), pos, camUp);
-	}
+	
 	
 	if (cameraType == 0) {
+		collision = true;
 		viewingMatrix = glm::lookAt(camPos, camPos + camFront, camUp);
 	}
 	else if (cameraType == 1) {
+		collision = false;
+		camPos.x = 3.5 * sin(rotateAngle - 0.2);
+		camPos.z = 3.5 * cos(rotateAngle - 0.2);
+		camPos.y = -pos.y -3.3;
+		float cameraRotateAngle = -(rotateAngle + 0.5 * PI );
+		viewingMatrix = glm::rotate(viewingMatrix, cameraRotateAngle, glm::vec3(0, 1, 0));
+		viewingMatrix = glm::translate(viewingMatrix, camPos);
 		
-		camPos.x = 3.5 * sin(rotateAngle-41);
-		camPos.z = 3.5 * cos(rotateAngle-41);
-		camPos.y = pos.y + 3.6;
-		viewingMatrix = glm::lookAt(camPos, camPos + camFront, camUp);
+		//viewingMatrix = glm::lookAt(camPos, camPos + camFront, camUp);
 
+
+	}
+
+
+	else if (cameraType == 2) {
+		collision = false;
+		camPos.x = 3.5 * sin(rotateAngle - 40.9);
+		camPos.z = 3.5 * cos(rotateAngle - 40.9);
+		camPos.y = pos.y + 3.72;
+		viewingMatrix = glm::lookAt(camPos, camPos + camFront, camUp);
 	}
 
 	glUniform4fv(glGetUniformLocation(myShader->GetProgramObjID(), "LightPos"), 1, LightPos);
@@ -194,30 +207,6 @@ void display()
 
 	
 	Horse.DrawElementsUsingVBO(myShader);
-	Horse.DrawBoundingBox(myShader);
-	Horse.CalcBoundingBox(maxX, maxY, maxZ, minX, minY, minZ);
-	
-	
-	
-	
-	
-	
-
-	if(!(camPos.x > minX) && !(camPos.x < maxX)) {
-		
-		if (lastCamX > camPos.x) {
-			camPos.x = camPos.x + 0.1;
-		}
-		else if (lastCamX < camPos.x) {
-			camPos.x = camPos.x - 0.1;
-		}
-	}
-
-	
-
-
-
-	lastCamX = camPos.x;
 
 	modelmatrix = glm::translate(glm::mat4(1.0f), pos2);
 	modelmatrix = glm::rotate(modelmatrix, rotateAngle, glm::vec3(0, 1, 0));
@@ -243,9 +232,28 @@ void display()
 	glUniformMatrix4fv(glGetUniformLocation(myShader->GetProgramObjID(), "ModelViewMatrix"), 1, GL_FALSE, &ModelViewMatrix[0][0]);
 	normalMatrix = glm::inverseTranspose(glm::mat3(ModelViewMatrix));
 	glUniformMatrix3fv(glGetUniformLocation(myShader->GetProgramObjID(), "NormalMatrix"), 1, GL_FALSE, &normalMatrix[0][0]);
+
 	Horse4.DrawElementsUsingVBO(myShader);
 	
-	
+	modelmatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f,0.2f,0.0f));
+	modelmatrix = glm::rotate(modelmatrix, rotateAngle, glm::vec3(0, 1, 0));
+	ModelViewMatrix = viewingMatrix * modelmatrix;
+	glUniformMatrix4fv(glGetUniformLocation(myShader->GetProgramObjID(), "ModelViewMatrix"), 1, GL_FALSE, &ModelViewMatrix[0][0]);
+	normalMatrix = glm::inverseTranspose(glm::mat3(ModelViewMatrix));
+	glUniformMatrix3fv(glGetUniformLocation(myShader->GetProgramObjID(), "NormalMatrix"), 1, GL_FALSE, &normalMatrix[0][0]);
+
+	carouselFloor.DrawElementsUsingVBO(myShader);
+
+	carouselFloor.CalcBoundingBox(maxX, maxY, maxZ, minX, minY, minZ);
+	Terrain.DrawElementsUsingVBO(myShader);
+
+	if (collision == true) {
+		if (!(camPos.x > minX + 2) && !(camPos.x < maxX - 2) && !(camPos.y > minY) && !(camPos.y < maxY + 3) && !(camPos.z > minZ + 2) && !(camPos.z < maxZ - 2)) {
+			camPos = lastCamPos;
+		}
+
+		lastCamPos = camPos;
+	}
 
 	//-------------------------------------------------------------------------------------------------------
 
@@ -256,6 +264,7 @@ void display()
 	glUniformMatrix4fv(glGetUniformLocation(myBasicShader->GetProgramObjID(), "ModelViewMatrix"), 1, GL_FALSE, &ModelViewMatrix[0][0]);
 
 	
+
 	//switch back to the shader for textures and lighting on the objects.
 	glUseProgram(myShader->GetProgramObjID());  // use the shader
 
@@ -264,9 +273,10 @@ void display()
 	normalMatrix = glm::inverseTranspose(glm::mat3(ModelViewMatrix));
 	glUniformMatrix3fv(glGetUniformLocation(myShader->GetProgramObjID(), "NormalMatrix"), 1, GL_FALSE, &normalMatrix[0][0]);
 	
-	carouselFloor.DrawElementsUsingVBO(myShader);
+	
 	Terrain.DrawElementsUsingVBO(myShader);
 
+	
 	ModelViewMatrix = glm::translate(viewingMatrix, glm::vec3(0, -5.2, 0));
 	glUniformMatrix4fv(glGetUniformLocation(myShader->GetProgramObjID(), "ModelViewMatrix"), 1, GL_FALSE, &ModelViewMatrix[0][0]);
 	normalMatrix = glm::inverseTranspose(glm::mat3(ModelViewMatrix));
@@ -442,7 +452,7 @@ void keyboard(unsigned char key, int x, int y)
 		break;
 	case 'c':
 		cameraType++;
-		if (cameraType > 1) {
+		if (cameraType > 2) {
 			cameraType = 0;
 		}
 		break;
@@ -487,8 +497,8 @@ void motion(int x, int y) {
 
 
 
-		yaw -= 0.4f * (960 - x);
-		pitch += 0.4f * (540 - y);
+		yaw -= 0.4f * (400 - x);
+		pitch += 0.4f * (300 - y);
 
 		if (pitch > 89.0f)
 			pitch = 89.0f;
@@ -503,7 +513,7 @@ void motion(int x, int y) {
 		
 	}
 	firstLoop = false;
-	glutWarpPointer(960, 540);
+	glutWarpPointer(400, 300);
 	
 
 };
@@ -556,7 +566,7 @@ int main(int argc, char **argv)
 
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
 	glutInitWindowSize(screenWidth, screenHeight);
-	glutInitWindowPosition(0, 0);
+	glutInitWindowPosition(100, 100);
 	glutCreateWindow("OpenGL FreeGLUT Example: Obj loading");
 
 	//This initialises glew - it must be called after the window is created.
@@ -576,7 +586,7 @@ int main(int argc, char **argv)
 
 	//initialise the objects for rendering
 	init();
-	glutFullScreen();
+	//glutFullScreen();
 	glutReshapeFunc(reshape);
 	//specify which function will be called to refresh the screen.
 	glutDisplayFunc(display);
