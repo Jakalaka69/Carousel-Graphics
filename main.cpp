@@ -31,7 +31,7 @@ float amount = 0;
 float temp = 0.002f;
 int cameraType = 0;
 
-CThreeDModel Horse,Horse2,Horse3,Horse4,grassFloor,carouselFloor,Terrain; //A threeDModel object is needed for each model loaded
+CThreeDModel Horse,Horse2,Horse3,Horse4,grassFloor,carouselFloor,Terrain, tower; //A threeDModel object is needed for each model loaded
 COBJLoader objLoader;	//this object is used to load the 3d models.
 ///END MODEL LOADING
 
@@ -48,6 +48,7 @@ glm::vec3 camPos = glm::vec3(10.0f, 0.0f, 0.0f);
 glm::vec3 camFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 camUp = glm::vec3(0.0f, 1.0f, 0.0f);
 glm::vec3 lastCamPos = glm::vec3(0.0f, 0.0f, 0.0f);
+glm::vec3 lastCamPos2 = glm::vec3(10.0f, 0.0f, 0.0f);
 
 float horseAngle = 0.0f;
 float bounceAngle = 0.0f;
@@ -58,7 +59,7 @@ float lightAngle = 0.f;
 
 
 //Material properties
-float Material_Ambient[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+float Material_Ambient[4] = {0.8f, 0.8f, 0.8f, 0.8f};
 float Material_Diffuse[4] = {0.7f, 0.7f, 0.7f, 1.0f};
 float Material_Specular[4] = {1.0f,1.0f,1.0f,1.0f};
 float Material_Shininess = 50;
@@ -76,7 +77,7 @@ int screenWidth=800, screenHeight=600;
 float lastX = 400, lastY = 300;
 float yaw = -90.0f;
 float pitch = 0.0f;
-
+int count2 = 0;
 
 
 //booleans to handle when the arrow keys are pressed or released.
@@ -140,10 +141,10 @@ void display()
 	if (horseAngle > 360.0)
 		horseAngle = 0;
 
-	pos.y = 0.5 * sin(bounceAngle) -4.5;
-	pos2.y = 0.5 * sin(bounceAngle - 60)-4.5;
-	pos3.y = 0.5 * sin(bounceAngle - 300)-4.5;
-	pos4.y = 0.5 * sin(bounceAngle - 180)-4.5;
+	pos.y = 0.5 * sin(bounceAngle) -5.5;
+	pos2.y = 0.5 * sin(bounceAngle - 60)-5.5;
+	pos3.y = 0.5 * sin(bounceAngle - 300)-5.5;
+	pos4.y = 0.5 * sin(bounceAngle - 180)-5.5;
 	
 
 	glm::mat4 viewingMatrix = glm::mat4(1.0f);
@@ -152,9 +153,18 @@ void display()
 	
 	if (cameraType == 0) {
 		collision = true;
+		
+		if (count2 < 2) {
+			camPos = lastCamPos2;
+			cout << camPos.x << endl;
+			count2++;
+		}
 		viewingMatrix = glm::lookAt(camPos, camPos + camFront, camUp);
+		
 	}
 	else if (cameraType == 1) {
+		count2 = 0;
+		lastCamPos2 = camPos;
 		collision = false;
 		camPos.x = 3.5 * sin(rotateAngle - 0.2);
 		camPos.z = 3.5 * cos(rotateAngle - 0.2);
@@ -187,6 +197,7 @@ void display()
 	glUniform4fv(glGetUniformLocation(myShader->GetProgramObjID(), "material_specular"), 1, Material_Specular);
 	glUniform1f(glGetUniformLocation(myShader->GetProgramObjID(), "material_shininess"), Material_Shininess);
 
+	
 	
 	glUniformMatrix4fv(glGetUniformLocation(myShader->GetProgramObjID(), "ViewMatrix"), 1, GL_FALSE, &viewingMatrix[0][0]);
 	
@@ -234,27 +245,42 @@ void display()
 	glUniformMatrix3fv(glGetUniformLocation(myShader->GetProgramObjID(), "NormalMatrix"), 1, GL_FALSE, &normalMatrix[0][0]);
 
 	Horse4.DrawElementsUsingVBO(myShader);
+
 	
-	modelmatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f,0.2f,0.0f));
+	
+	
+
+	modelmatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f,-1.0f,0.0f));
 	modelmatrix = glm::rotate(modelmatrix, rotateAngle, glm::vec3(0, 1, 0));
 	ModelViewMatrix = viewingMatrix * modelmatrix;
 	glUniformMatrix4fv(glGetUniformLocation(myShader->GetProgramObjID(), "ModelViewMatrix"), 1, GL_FALSE, &ModelViewMatrix[0][0]);
 	normalMatrix = glm::inverseTranspose(glm::mat3(ModelViewMatrix));
 	glUniformMatrix3fv(glGetUniformLocation(myShader->GetProgramObjID(), "NormalMatrix"), 1, GL_FALSE, &normalMatrix[0][0]);
-
+	     
 	carouselFloor.DrawElementsUsingVBO(myShader);
-
+	
 	carouselFloor.CalcBoundingBox(maxX, maxY, maxZ, minX, minY, minZ);
 	Terrain.DrawElementsUsingVBO(myShader);
 
 	if (collision == true) {
-		if (!(camPos.x > minX + 2) && !(camPos.x < maxX - 2) && !(camPos.y > minY) && !(camPos.y < maxY + 3) && !(camPos.z > minZ + 2) && !(camPos.z < maxZ - 2)) {
-			camPos = lastCamPos;
+		if ((!(camPos.x > minX ) && !(camPos.x < maxX) && !(camPos.y > minY - 1) && !(camPos.y < maxY - 1) && !(camPos.z > minZ) && !(camPos.z < maxZ))) {
+			if ((!(lastCamPos.x > minX) && !(lastCamPos.x < maxX) && !(lastCamPos.y > minY - 1) && !(lastCamPos.y < maxY - 1) && !(lastCamPos.z > minZ) && !(lastCamPos.z < maxZ))) {
+				camPos = glm::vec3(10.0, 0.0f, 10.0f);
+			}
+			else {
+				camPos = lastCamPos;
+			}
 		}
 
-		lastCamPos = camPos;
+		
 	}
-
+	if (collision == true) {
+		if (camPos.y < -5 || camPos.y > 5 || camPos.x > 13.5 || camPos.x < -13.5 || camPos.z < -13.5 || camPos.z > 13.5) {
+			camPos = lastCamPos;
+		}
+	}
+	
+	lastCamPos = camPos;
 	//-------------------------------------------------------------------------------------------------------
 
 	//Switch to basic shader to draw the lines for the bounding boxes
@@ -282,8 +308,8 @@ void display()
 	normalMatrix = glm::inverseTranspose(glm::mat3(ModelViewMatrix));
 	glUniformMatrix3fv(glGetUniformLocation(myShader->GetProgramObjID(), "NormalMatrix"), 1, GL_FALSE, &normalMatrix[0][0]);
 	
+	tower.DrawElementsUsingVBO(myShader);
 	
-	grassFloor.DrawElementsUsingVBO(myShader);
 	
 	
 
@@ -399,6 +425,18 @@ void init()
 		grassFloor.CalcCentrePoint();
 		grassFloor.CentreOnZero();
 		grassFloor.InitVBO(myShader);
+	}
+	else
+	{
+		cout << " model failed to load " << endl;
+	}
+	if (objLoader.LoadModel("TestModels/castle.obj"))//returns true if the model is loaded
+	{
+		cout << " model loaded " << endl;
+		tower.ConstructModelFromOBJLoader(objLoader);
+		grassFloor.CalcCentrePoint();
+		grassFloor.CentreOnZero();
+		tower.InitVBO(myShader);
 	}
 	else
 	{
