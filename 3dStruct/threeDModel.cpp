@@ -429,7 +429,7 @@ void CThreeDModel::CalcBoundingBox(double& minX, double& minY, double& minZ, dou
 	double x,y,z;
 	for (int i = 1; i < m_iNumberOfVertices; i++)
 	{
-
+		
 		x = m_pvVertices[i].x;
 		y = m_pvVertices[i].y;
 		z = m_pvVertices[i].z;

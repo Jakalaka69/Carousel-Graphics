@@ -20,6 +20,7 @@ class CShader;
 const int MAX_DEPTH					=	4;   //Depth of the octree
 const int NUM_OF_OCTREE_CHILDREN	=	8;   //Maximum number of children for each octree node.
 
+
 class COctree
 {
 private:

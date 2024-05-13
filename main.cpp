@@ -20,6 +20,8 @@ using namespace std;
 
 #include "shaders\Shader.h"
 
+#include "Octree\Octree.h"
+
 CShader* myShader;  ///shader object 
 CShader* myBasicShader;
 
@@ -31,7 +33,7 @@ float amount = 0;
 float temp = 0.002f;
 int cameraType = 0;
 
-CThreeDModel Horse,Horse2,Horse3,Horse4,grassFloor,carouselFloor,Terrain, tower; //A threeDModel object is needed for each model loaded
+CThreeDModel Horse,Horse2,Horse3,Horse4,grassFloor,carousel1,carousel2,carousel3,Terrain, tower1, tower2, tower3, tower4, castleWall1, castleWall2,castleWall3,castleWall4; //A threeDModel object is needed for each model loaded
 COBJLoader objLoader;	//this object is used to load the 3d models.
 ///END MODEL LOADING
 
@@ -44,8 +46,8 @@ glm::vec3 pos = glm::vec3(0.0f,0.0f,0.0f); //vector for the position of the obje
 glm::vec3 pos2 = glm::vec3(0.0f, 0.0f, 0.0f);
 glm::vec3 pos3 = glm::vec3(0.0f, 0.0f, 0.0f);
 glm::vec3 pos4 = glm::vec3(0.0f, 0.0f, 0.0f);
-glm::vec3 camPos = glm::vec3(10.0f, 0.0f, 0.0f);
-glm::vec3 camFront = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 camPos = glm::vec3(6.0f, 4.0f, 0.0f);
+glm::vec3 camFront = glm::vec3(0.0f, 0.0f, 1.0f);
 glm::vec3 camUp = glm::vec3(0.0f, 1.0f, 0.0f);
 glm::vec3 lastCamPos = glm::vec3(0.0f, 0.0f, 0.0f);
 glm::vec3 lastCamPos2 = glm::vec3(10.0f, 0.0f, 0.0f);
@@ -57,17 +59,22 @@ float camRight = 0.0;
 float camFoward = 0.0;
 float lightAngle = 0.f;
 
+float R = 1.0f;
+float G = 1.0f;
+float B = 1.0f;
+
+float xoffset = 0.0f;
+float yoffset = 0.0f;
+float zoffset = 0.0f;
 
 //Material properties
-float Material_Ambient[4] = {0.8f, 0.8f, 0.8f, 0.8f};
-float Material_Diffuse[4] = {0.7f, 0.7f, 0.7f, 1.0f};
-float Material_Specular[4] = {1.0f,1.0f,1.0f,1.0f};
+
+float Material_Specular[4] = {0.8f,0.8f,0.8f,1.0f};
 float Material_Shininess = 50;
 
 //Light Properties
-float Light_Ambient[4] = {1.0f, 1.0f, 1.0f, 1.0f};
-float Light_Diffuse[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-float Light_Specular[4] = { 1.0f,1.0f,1.0f,1.0f};
+
+float Light_Specular[4] = { 0.8f,0.8f,0.8f,0.8f};
 float LightPos[4] = {0.0f, 1.0f, 0.0f, 0.0f};
 
 //
@@ -78,7 +85,8 @@ float lastX = 400, lastY = 300;
 float yaw = -90.0f;
 float pitch = 0.0f;
 int count2 = 0;
-
+float rideSpeed = 1;
+float discoCount = 0;
 
 //booleans to handle when the arrow keys are pressed or released.
 bool Left = false;
@@ -92,7 +100,8 @@ bool rightOn = false;
 bool firstLoop = true;
 bool firstmouse = true;
 bool collision = true;
-
+bool pause = false;
+bool disco = false;
 double maxX,maxY,maxZ,minX,minY,minZ;
 
 
@@ -107,44 +116,49 @@ void init();				//called in winmain when the program starts.
 void processKeys();         //called in winmain to process keyboard input
 void idle();		//idle function
 void updateTransform(float xinc, float yinc, float zinc);
-
+void DrawAndCheckCollision(CThreeDModel model);
 /*************    START OF OPENGL FUNCTIONS   ****************/
-void display()									
+void display()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	
+
 	glUseProgram(myShader->GetProgramObjID());  // use the shader
 
 	//Part for displacement shader.
 	amount += temp;
-	if(amount > 1.0f || amount < -1.5f)
+	if (amount > 1.0f || amount < -1.5f)
 		temp = -temp;
 	//amount = 0;
 	glUniform1f(glGetUniformLocation(myShader->GetProgramObjID(), "displacement"), amount);
 
 	//Set the projection matrix in the shader
-	GLuint projMatLocation = glGetUniformLocation(myShader->GetProgramObjID(), "ProjectionMatrix");  
+	GLuint projMatLocation = glGetUniformLocation(myShader->GetProgramObjID(), "ProjectionMatrix");
 	glUniformMatrix4fv(projMatLocation, 1, GL_FALSE, &ProjectionMatrix[0][0]);
 
 
 	//----------------------------------------------------------------------
-	rotateAngle += 0.005f;
-	if (rotateAngle > 360.0)
-		rotateAngle = 0;
+	if (!pause) {
+		rotateAngle += 0.005f * rideSpeed;
+		if (rotateAngle > 360.0)
+			rotateAngle = 0;
 
-	bounceAngle += 0.01f;
-	if (bounceAngle > 360) {
-		bounceAngle = 0;
+		discoCount += 0.005f * rideSpeed;
+		if (discoCount > 6)
+			discoCount = 0;
+
+		bounceAngle += 0.01f * rideSpeed;
+		if (bounceAngle > 360) {
+			bounceAngle = 0;
+		}
+
+		horseAngle += 0.005f * rideSpeed;
+		if (horseAngle > 360.0)
+			horseAngle = 0;
 	}
-
-	horseAngle += 0.005f;
-	if (horseAngle > 360.0)
-		horseAngle = 0;
-
-	pos.y = 0.5 * sin(bounceAngle) -5.5;
-	pos2.y = 0.5 * sin(bounceAngle - 60)-5.5;
-	pos3.y = 0.5 * sin(bounceAngle - 300)-5.5;
-	pos4.y = 0.5 * sin(bounceAngle - 180)-5.5;
+	pos.y = 0.5 * sin(bounceAngle) + 0.5 ;
+	pos2.y = 0.5 * sin(bounceAngle - 60) + 0.5;
+	pos3.y = 0.5 * sin(bounceAngle - 300) + 0.5;
+	pos4.y = 0.5 * sin(bounceAngle - 180) + 0.5;
 	
 
 	glm::mat4 viewingMatrix = glm::mat4(1.0f);
@@ -152,19 +166,9 @@ void display()
 	
 	
 	if (cameraType == 0) {
-		collision = true;
-		
-		if (count2 < 2) {
-			camPos = lastCamPos2;
-			cout << camPos.x << endl;
-			count2++;
-		}
 		viewingMatrix = glm::lookAt(camPos, camPos + camFront, camUp);
-		
 	}
 	else if (cameraType == 1) {
-		count2 = 0;
-		lastCamPos2 = camPos;
 		collision = false;
 		camPos.x = 3.5 * sin(rotateAngle - 0.2);
 		camPos.z = 3.5 * cos(rotateAngle - 0.2);
@@ -172,13 +176,7 @@ void display()
 		float cameraRotateAngle = -(rotateAngle + 0.5 * PI );
 		viewingMatrix = glm::rotate(viewingMatrix, cameraRotateAngle, glm::vec3(0, 1, 0));
 		viewingMatrix = glm::translate(viewingMatrix, camPos);
-		
-		//viewingMatrix = glm::lookAt(camPos, camPos + camFront, camUp);
-
-
 	}
-
-
 	else if (cameraType == 2) {
 		collision = false;
 		camPos.x = 3.5 * sin(rotateAngle - 40.9);
@@ -186,6 +184,69 @@ void display()
 		camPos.y = pos.y + 3.72;
 		viewingMatrix = glm::lookAt(camPos, camPos + camFront, camUp);
 	}
+	else if (cameraType == 3) {
+		collision = true;
+		camPos.y = 1.5;
+		
+		viewingMatrix = glm::lookAt(camPos, camPos + camFront, camUp);
+	}
+
+
+
+	LightPos[0] = 2.5 * sin(rotateAngle);
+	LightPos[2] = 2.5 * cos(rotateAngle)+4;
+	LightPos[1] = -4;
+	
+	
+
+	if (disco) {
+
+		
+		if (discoCount < 1 && discoCount > 0)  {
+			R = 0.0f;
+			G = 1.0f;
+			B = 0.0f;
+			
+		}
+		else if (discoCount < 2 && discoCount > 1) {
+			R = 1.0f;
+			G = 1.0f;
+			B = 0.0f;
+			
+		}
+		else if (discoCount < 3 && discoCount > 2) {
+			R = 1.0f;
+			G = 0.0f;
+			B = 1.0f;
+			
+		}
+		else if (discoCount < 4 && discoCount > 3) {
+			R = 0.0f;
+			G = 0.0f;
+			B = 1.0f;
+		}
+		else if (discoCount < 5 && discoCount > 4) {
+			R = 0.0f;
+			G = 1.0f;
+			B = 1.0f;
+		}
+		else if (discoCount < 6 && discoCount > 5) {
+			R = 1.0f;
+			G = 0.0f;
+			B = 0.0f;
+		}
+	}
+	if (!disco) {
+		R = 1.0f;
+		G = 1.0f;
+		B = 1.0f;
+	}
+	
+	float Light_Ambient[4] = { R, G, B, 1.0f };
+	float Light_Diffuse[4] = { R, G, B, 1.0f };
+
+	float Material_Ambient[4] = { R, G, B, 1.0f };
+	float Material_Diffuse[4] = { R, G, B, 1.0f };
 
 	glUniform4fv(glGetUniformLocation(myShader->GetProgramObjID(), "LightPos"), 1, LightPos);
 	glUniform4fv(glGetUniformLocation(myShader->GetProgramObjID(), "light_ambient"), 1, Light_Ambient);
@@ -202,14 +263,12 @@ void display()
 	glUniformMatrix4fv(glGetUniformLocation(myShader->GetProgramObjID(), "ViewMatrix"), 1, GL_FALSE, &viewingMatrix[0][0]);
 	
 	
+	
 
-
+	
 	
 	
 	glm::mat4 modelmatrix = glm::translate(glm::mat4(1.0f), pos);
-	
-	
-	
 	modelmatrix = glm::rotate(modelmatrix, rotateAngle, glm::vec3(0, 1, 0));
 	ModelViewMatrix = viewingMatrix * modelmatrix;
 	glUniformMatrix4fv(glGetUniformLocation(myShader->GetProgramObjID(), "ModelViewMatrix"), 1, GL_FALSE, &ModelViewMatrix[0][0]);
@@ -218,7 +277,7 @@ void display()
 
 	
 	Horse.DrawElementsUsingVBO(myShader);
-
+	
 	modelmatrix = glm::translate(glm::mat4(1.0f), pos2);
 	modelmatrix = glm::rotate(modelmatrix, rotateAngle, glm::vec3(0, 1, 0));
 	ModelViewMatrix = viewingMatrix * modelmatrix;
@@ -246,41 +305,44 @@ void display()
 
 	Horse4.DrawElementsUsingVBO(myShader);
 
-	
-	
-	
+	yoffset = 0.5;
 
-	modelmatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f,-1.0f,0.0f));
+	modelmatrix = glm::translate(glm::mat4(1.0f), glm::vec3(xoffset,yoffset,zoffset));
 	modelmatrix = glm::rotate(modelmatrix, rotateAngle, glm::vec3(0, 1, 0));
 	ModelViewMatrix = viewingMatrix * modelmatrix;
 	glUniformMatrix4fv(glGetUniformLocation(myShader->GetProgramObjID(), "ModelViewMatrix"), 1, GL_FALSE, &ModelViewMatrix[0][0]);
 	normalMatrix = glm::inverseTranspose(glm::mat3(ModelViewMatrix));
 	glUniformMatrix3fv(glGetUniformLocation(myShader->GetProgramObjID(), "NormalMatrix"), 1, GL_FALSE, &normalMatrix[0][0]);
 	     
-	carouselFloor.DrawElementsUsingVBO(myShader);
 	
-	carouselFloor.CalcBoundingBox(maxX, maxY, maxZ, minX, minY, minZ);
-	Terrain.DrawElementsUsingVBO(myShader);
+	DrawAndCheckCollision(carousel3);
+	DrawAndCheckCollision(carousel2);
+	yoffset = 1.5;
+	DrawAndCheckCollision(carousel1);
 
-	if (collision == true) {
-		if ((!(camPos.x > minX ) && !(camPos.x < maxX) && !(camPos.y > minY - 1) && !(camPos.y < maxY - 1) && !(camPos.z > minZ) && !(camPos.z < maxZ))) {
-			if ((!(lastCamPos.x > minX) && !(lastCamPos.x < maxX) && !(lastCamPos.y > minY - 1) && !(lastCamPos.y < maxY - 1) && !(lastCamPos.z > minZ) && !(lastCamPos.z < maxZ))) {
-				camPos = glm::vec3(10.0, 0.0f, 10.0f);
-			}
-			else {
-				camPos = lastCamPos;
-			}
-		}
-
-		
-	}
-	if (collision == true) {
-		if (camPos.y < -5 || camPos.y > 5 || camPos.x > 13.5 || camPos.x < -13.5 || camPos.z < -13.5 || camPos.z > 13.5) {
-			camPos = lastCamPos;
-		}
-	}
+	yoffset = 0.0f;
+	modelmatrix = glm::translate(glm::mat4(1.0f), glm::vec3(xoffset, yoffset, zoffset));
 	
-	lastCamPos = camPos;
+	ModelViewMatrix = viewingMatrix * modelmatrix;
+	glUniformMatrix4fv(glGetUniformLocation(myShader->GetProgramObjID(), "ModelViewMatrix"), 1, GL_FALSE, &ModelViewMatrix[0][0]);
+	normalMatrix = glm::inverseTranspose(glm::mat3(ModelViewMatrix));
+	glUniformMatrix3fv(glGetUniformLocation(myShader->GetProgramObjID(), "NormalMatrix"), 1, GL_FALSE, &normalMatrix[0][0]);
+
+	DrawAndCheckCollision(tower1);
+	DrawAndCheckCollision(tower2);
+	DrawAndCheckCollision(tower3);
+	DrawAndCheckCollision(tower4);
+	DrawAndCheckCollision(castleWall1);
+	DrawAndCheckCollision(castleWall2);
+	DrawAndCheckCollision(castleWall3);
+	DrawAndCheckCollision(castleWall4);
+	DrawAndCheckCollision(grassFloor);
+
+	
+
+	
+	
+	
 	//-------------------------------------------------------------------------------------------------------
 
 	//Switch to basic shader to draw the lines for the bounding boxes
@@ -299,19 +361,15 @@ void display()
 	normalMatrix = glm::inverseTranspose(glm::mat3(ModelViewMatrix));
 	glUniformMatrix3fv(glGetUniformLocation(myShader->GetProgramObjID(), "NormalMatrix"), 1, GL_FALSE, &normalMatrix[0][0]);
 	
-	
-	Terrain.DrawElementsUsingVBO(myShader);
-
-	
 	ModelViewMatrix = glm::translate(viewingMatrix, glm::vec3(0, -5.2, 0));
 	glUniformMatrix4fv(glGetUniformLocation(myShader->GetProgramObjID(), "ModelViewMatrix"), 1, GL_FALSE, &ModelViewMatrix[0][0]);
 	normalMatrix = glm::inverseTranspose(glm::mat3(ModelViewMatrix));
 	glUniformMatrix3fv(glGetUniformLocation(myShader->GetProgramObjID(), "NormalMatrix"), 1, GL_FALSE, &normalMatrix[0][0]);
 	
-	tower.DrawElementsUsingVBO(myShader);
 	
-	
-	
+
+
+
 
 	glFlush();
 	glutSwapBuffers();
@@ -405,20 +463,43 @@ void init()
 	}
 
 	
-	if (objLoader.LoadModel("TestModels/carousel.obj"))//returns true if the model is loaded
+	if (objLoader.LoadModel("TestModels/carousel1.obj"))//returns true if the model is loaded
 	{
 		cout << " model loaded " << endl;
-		carouselFloor.ConstructModelFromOBJLoader(objLoader);
-		carouselFloor.CalcCentrePoint();
-		carouselFloor.CentreOnZero();
-		carouselFloor.InitVBO(myShader);
+		carousel1.ConstructModelFromOBJLoader(objLoader);
+		
+		carousel1.InitVBO(myShader);
 
 	}
 	else
 	{
 		cout << " model failed to load " << endl;
 	}
-	if (objLoader.LoadModel("TestModels/grassFloor.obj"))//returns true if the model is loaded
+	if (objLoader.LoadModel("TestModels/carousel2.obj"))//returns true if the model is loaded
+	{
+		cout << " model loaded " << endl;
+		carousel2.ConstructModelFromOBJLoader(objLoader);
+		
+		carousel2.InitVBO(myShader);
+
+	}
+	else
+	{
+		cout << " model failed to load " << endl;
+	}
+	if (objLoader.LoadModel("TestModels/carousel3.obj"))//returns true if the model is loaded
+	{
+		cout << " model loaded " << endl;
+		carousel3.ConstructModelFromOBJLoader(objLoader);
+		
+		carousel3.InitVBO(myShader);
+
+	}
+	else
+	{
+		cout << " model failed to load " << endl;
+	}
+	if (objLoader.LoadModel("TestModels/castleFloor.obj"))//returns true if the model is loaded
 	{
 		cout << " model loaded " << endl;
 		grassFloor.ConstructModelFromOBJLoader(objLoader);
@@ -430,13 +511,89 @@ void init()
 	{
 		cout << " model failed to load " << endl;
 	}
-	if (objLoader.LoadModel("TestModels/castle.obj"))//returns true if the model is loaded
+	if (objLoader.LoadModel("TestModels/tower1.obj"))//returns true if the model is loaded
 	{
 		cout << " model loaded " << endl;
-		tower.ConstructModelFromOBJLoader(objLoader);
-		grassFloor.CalcCentrePoint();
-		grassFloor.CentreOnZero();
-		tower.InitVBO(myShader);
+		tower1.ConstructModelFromOBJLoader(objLoader);
+		
+		tower1.InitVBO(myShader);
+	}
+	else
+	{
+		cout << " model failed to load " << endl;
+	}
+	if (objLoader.LoadModel("TestModels/tower2.obj"))//returns true if the model is loaded
+	{
+		cout << " model loaded " << endl;
+		tower2.ConstructModelFromOBJLoader(objLoader);
+		
+		tower2.InitVBO(myShader);
+	}
+	else
+	{
+		cout << " model failed to load " << endl;
+	}
+	if (objLoader.LoadModel("TestModels/tower3.obj"))//returns true if the model is loaded
+	{
+		cout << " model loaded " << endl;
+		tower3.ConstructModelFromOBJLoader(objLoader);
+		
+		tower3.InitVBO(myShader);
+	}
+	else
+	{
+		cout << " model failed to load " << endl;
+	}
+	if (objLoader.LoadModel("TestModels/tower4.obj"))//returns true if the model is loaded
+	{
+		cout << " model loaded " << endl;
+		tower4.ConstructModelFromOBJLoader(objLoader);
+		
+		tower4.InitVBO(myShader);
+	}
+	else
+	{
+		cout << " model failed to load " << endl;
+	}
+	if (objLoader.LoadModel("TestModels/castleWall1.obj"))//returns true if the model is loaded
+	{
+		cout << " model loaded " << endl;
+		castleWall1.ConstructModelFromOBJLoader(objLoader);
+		
+		castleWall1.InitVBO(myShader);
+	}
+	else
+	{
+		cout << " model failed to load " << endl;
+	}
+	if (objLoader.LoadModel("TestModels/castleWall2.obj"))//returns true if the model is loaded
+	{
+		cout << " model loaded " << endl;
+		castleWall2.ConstructModelFromOBJLoader(objLoader);
+		
+		castleWall2.InitVBO(myShader);
+	}
+	else
+	{
+		cout << " model failed to load " << endl;
+	}
+	if (objLoader.LoadModel("TestModels/castleWall3.obj"))//returns true if the model is loaded
+	{
+		cout << " model loaded " << endl;
+		castleWall3.ConstructModelFromOBJLoader(objLoader);
+		
+		castleWall3.InitVBO(myShader);
+	}
+	else
+	{
+		cout << " model failed to load " << endl;
+	}
+	if (objLoader.LoadModel("TestModels/castleWall4.obj"))//returns true if the model is loaded
+	{
+		cout << " model loaded " << endl;
+		castleWall4.ConstructModelFromOBJLoader(objLoader);
+		
+		castleWall4.InitVBO(myShader);
 	}
 	else
 	{
@@ -456,6 +613,13 @@ void special(int key, int x, int y)
 	case GLUT_KEY_CTRL_L:
 		End = true;
 		break;
+	case GLUT_KEY_LEFT:
+		rideSpeed--;
+		break;
+	case GLUT_KEY_RIGHT:
+		rideSpeed++;
+		break;
+	
 	}
 }
 
@@ -466,6 +630,7 @@ void specialUp(int key, int x, int y)
 	case GLUT_KEY_CTRL_L:
 		End = false;
 		break;
+
 	}
 }
 
@@ -490,12 +655,54 @@ void keyboard(unsigned char key, int x, int y)
 		break;
 	case 'c':
 		cameraType++;
-		if (cameraType > 2) {
+		if (cameraType > 3) {
 			cameraType = 0;
 		}
+		if (cameraType == 3) {
+			camPos.x = camPos.x + 5;
+		}
 		break;
-	}
 
+	case 'p':
+		if (pause) {
+			pause = false;
+		}
+		else{
+			pause = true;
+		}
+		break;
+	case'r':
+		if (R == 1.0f) {
+			R = 0.0f;
+		}
+		else {
+			R = 1.0f;
+		}
+		break;
+	case'g':
+		if (G == 1.0f) {
+			G = 0.0f;
+		}
+		else {
+			G = 1.0f;
+		}
+		break;
+	case'b':
+		if (B == 1.0f) {
+			B = 0.0f;
+		}
+		else {
+			B = 1.0f;
+		}
+		break;
+	case 'o':
+		if (disco == false) {
+			disco = true;
+		}
+		else {
+			disco = false;
+		}
+	}
 }
 
 void keyboardUp(unsigned char key, int x, int y)
@@ -556,32 +763,61 @@ void motion(int x, int y) {
 
 };
 
+void DrawAndCheckCollision(CThreeDModel model) {
+	model.DrawElementsUsingVBO(myShader);
+	model.CalcBoundingBox(maxX, maxY, maxZ, minX, minY, minZ);
+	
+	
+	if (collision == true) {
+		if (!(camPos.x > minX + 1.5 + xoffset) && !(camPos.z > minZ + zoffset) && !(camPos.z < maxZ + zoffset) && !(camPos.y < maxY + yoffset) && !(camPos.y > minY + yoffset) && (abs((camPos.x - minX - xoffset)) < abs((camPos.x - maxX - xoffset)))) {
+			camPos.x = minX + 1.5 + xoffset;
+		}
+		if (!(camPos.x < maxX - 1.5 + xoffset) && !(camPos.z > minZ + zoffset) && !(camPos.z < maxZ + zoffset) && !(camPos.y < maxY + yoffset) && !(camPos.y > minY + yoffset) && (abs((camPos.x - minX - xoffset)) > abs((camPos.x - maxX - xoffset)))) {
+			camPos.x = maxX - 1.5 + xoffset;
+		}
+		if (!(camPos.z > minZ + 1.5 + zoffset) && !(camPos.x > minX + xoffset) && !(camPos.x < maxX + xoffset) && !(camPos.y < maxY + yoffset) && !(camPos.y > minY + yoffset) && (abs((camPos.z - minZ - zoffset)) < abs((camPos.z - maxZ - zoffset)))) {
+			camPos.z = minZ + 1.5 + zoffset;
+		}
+		if (!(camPos.z < maxZ - 1.5 + zoffset) && !(camPos.x > minX + xoffset) && !(camPos.x < maxX + xoffset) && !(camPos.y < maxY + yoffset) && !(camPos.y > minY + yoffset) && (abs((camPos.z - minZ - zoffset)) > abs((camPos.z - maxZ - zoffset)))) {
+			camPos.z = maxZ - 1.5 + zoffset;
+		}
+		if (!(camPos.y > minY + 1.5 + yoffset) && !(camPos.x > minX + xoffset) && !(camPos.x < maxX + xoffset) && !(camPos.z < maxZ + zoffset) && !(camPos.z > minZ + zoffset) && (abs((camPos.y - minY -yoffset)) < abs((camPos.y - maxY - yoffset)))) {
+			camPos.y = minY + 1.5 + yoffset;
+		}
+		if (!(camPos.y < maxY - 1.5 + yoffset) && !(camPos.x > minX + xoffset) && !(camPos.x < maxX + xoffset) && !(camPos.z < maxZ + zoffset) && !(camPos.z > minZ + zoffset) && (abs((camPos.y - minY - yoffset)) > abs((camPos.y - maxY - yoffset)))) {
+			camPos.y = maxY - 1.5 + yoffset;
+		}
+		
+	}
+	
+}
+
 void processKeys()
 {
 	float spinXinc = 0.0f, spinYinc = 0.0f, spinZinc = 0.0f;
 	if (Left)
 	{
-		camPos -= 0.1f * glm::normalize(glm::cross(camFront, camUp));
+		camPos -= 0.05f * glm::normalize(glm::cross(camFront, camUp));
 	}
 	if (Right)
 	{
-		camPos += 0.1f * glm::normalize(glm::cross(camFront, camUp));
+		camPos += 0.05f * glm::normalize(glm::cross(camFront, camUp));
 	}
 	if (Up)
 	{
-		camPos += 0.1f * camFront;
+		camPos += 0.05f * camFront;
 	}
 	if (Down)
 	{
-		camPos -= 0.1f * camFront;
+		camPos -= 0.05f * camFront;
 	}
 	if (Home)
 	{
-		camPos.y += 0.1f;
+		camPos.y += 0.05f;
 	}
 	if (End)
 	{
-		camPos.y -= 0.1f;
+		camPos.y -= 0.05f;
 	}
 
 }

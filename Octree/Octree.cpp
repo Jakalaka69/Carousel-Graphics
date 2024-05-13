@@ -100,6 +100,8 @@ void COctree::SetUpOctree(int L, double x, double y, double z, double X, double 
 	m_dMaxY = Y;
 	m_dMaxZ = Z;
 
+	
+
 	if (PrimListSize > 0)
 	{
 		m_iPrimitiveListSize = PrimListSize;
